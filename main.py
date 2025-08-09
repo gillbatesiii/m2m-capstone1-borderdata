@@ -18,7 +18,7 @@ else:
 client = Socrata("data.bts.gov", APP_TOKEN)
 # First 2000 results, returned as JSON from API / converted to Python list of
 # dictionaries by sodapy.
-results = client.get("keg4-3bc2", limit=2000, )
+results = client.get("keg4-3bc2", limit=2000)
 
 # Convert to pandas DataFrame
 results_df = pd.DataFrame.from_records(results)
