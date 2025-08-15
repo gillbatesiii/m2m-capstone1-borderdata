@@ -18,7 +18,10 @@ else:
 client = Socrata("data.bts.gov", APP_TOKEN)
 # First 2000 results, returned as JSON from API / converted to Python list of
 # dictionaries by sodapy.
-results = client.get("keg4-3bc2", limit=4000,
+
+count = client.get('keg4-3bc2', query="SELECT count(*) WHERE border = 'US-Canada Border' AND date >= '2020-01-01'")[0]["count"]
+print('count', count)
+results = client.get("keg4-3bc2", limit=count,
                      where="border = 'US-Canada Border'")
 print('length', len(results))
 # Convert to pandas DataFrame
@@ -27,6 +30,8 @@ results_df = pd.DataFrame.from_records(results)
 # Data cleaning
 results_df.drop(columns=["point"], inplace=True)
 results_df['date'] = pd.to_datetime(results_df['date'])
+results_df['month'] = results_df['date'].dt.month
+results_df['year'] = results_df['date'].dt.year
 results_df['date'] = results_df['date'].dt.date
 print('info', results_df.info())
 nulls_df = results_df[results_df.isnull().any(axis=1)]
