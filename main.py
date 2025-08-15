@@ -23,7 +23,8 @@ row_count = client.get(
     "keg4-3bc2",
     query=f"SELECT count(*) WHERE border = 'US-Canada Border' AND date >= '2020-01-01'",
 )[0]["count"]
-print("count", row_count)
+print("row_count", row_count)
+row_count = int(row_count)
 results = client.get("keg4-3bc2", limit=row_count, where="border = 'US-Canada Border'")
 print("length", len(results))
 # Convert to pandas DataFrame
