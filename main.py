@@ -7,7 +7,7 @@ from sodapy import Socrata
 # get APP_TOKEN and initialize Socrata client
 
 load_dotenv()
-print('appname', os.getenv('app'))
+print("appname", os.getenv("app"))
 APP_TOKEN = os.getenv("SOCRATA_APP_TOKEN")
 
 if APP_TOKEN:
@@ -19,21 +19,23 @@ client = Socrata("data.bts.gov", APP_TOKEN)
 # First 2000 results, returned as JSON from API / converted to Python list of
 # dictionaries by sodapy.
 
-count = client.get('keg4-3bc2', query="SELECT count(*) WHERE border = 'US-Canada Border' AND date >= '2020-01-01'")[0]["count"]
-print('count', count)
-results = client.get("keg4-3bc2", limit=count,
-                     where="border = 'US-Canada Border'")
-print('length', len(results))
+row_count = client.get(
+    "keg4-3bc2",
+    query=f"SELECT count(*) WHERE border = 'US-Canada Border' AND date >= '2020-01-01'",
+)[0]["count"]
+print("count", row_count)
+results = client.get("keg4-3bc2", limit=row_count, where="border = 'US-Canada Border'")
+print("length", len(results))
 # Convert to pandas DataFrame
 results_df = pd.DataFrame.from_records(results)
 
 # Data cleaning
 results_df.drop(columns=["point"], inplace=True)
-results_df['date'] = pd.to_datetime(results_df['date'])
-results_df['month'] = results_df['date'].dt.month
-results_df['year'] = results_df['date'].dt.year
-results_df['date'] = results_df['date'].dt.date
-print('info', results_df.info())
+results_df["date"] = pd.to_datetime(results_df["date"])
+results_df["month"] = results_df["date"].dt.month
+results_df["year"] = results_df["date"].dt.year
+results_df["date"] = results_df["date"].dt.date
+print("info", results_df.info())
 nulls_df = results_df[results_df.isnull().any(axis=1)]
 app = Dash()
 app.layout = [
@@ -43,9 +45,12 @@ app.layout = [
     html.Hr(),
     dash_table.DataTable(data=results_df.to_dict("records"), page_size=10),
     html.Hr(),
-    dash_table.DataTable(data=results_df.to_dict("records"),
-                         columns=[{"name": i, "id": i} for i in results_df.columns]),
+    dash_table.DataTable(
+        data=results_df.to_dict("records"),
+        columns=[{"name": i, "id": i} for i in results_df.columns],
+    ),
 ]
+
 
 def main():
     print("m2m-capstone1-dash is running")
