@@ -26,6 +26,7 @@ row_count = client.get(
 print("row_count", row_count)
 row_count = int(row_count)
 results = client.get("keg4-3bc2", limit=row_count, where="border = 'US-Canada Border' AND date >= '2017-01-01'")
+client.close()
 print("length", len(results))
 # Convert to pandas DataFrame
 results_df = pd.DataFrame.from_records(results)
