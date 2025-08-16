@@ -21,23 +21,39 @@ client = Socrata("data.bts.gov", APP_TOKEN)
 
 row_count = client.get(
     "keg4-3bc2",
-    query=f"SELECT count(*) WHERE border = 'US-Canada Border' AND date >= '2020-01-01'",
+    query=f"SELECT count(*) WHERE border = 'US-Canada Border' AND date >= '2017-01-01'",
 )[0]["count"]
 print("row_count", row_count)
 row_count = int(row_count)
-results = client.get("keg4-3bc2", limit=row_count, where="border = 'US-Canada Border'")
+results = client.get("keg4-3bc2", limit=row_count, where="border = 'US-Canada Border' AND date >= '2017-01-01'")
 print("length", len(results))
 # Convert to pandas DataFrame
 results_df = pd.DataFrame.from_records(results)
 
 # Data cleaning
 results_df.drop(columns=["point"], inplace=True)
+
+# Null values
+nulls_df = results_df[results_df.isnull().any(axis=1)]
+
+# "State" field of new port of entry "Chief Mountain Mt Poe" hasn't been populated yet.
+# Will set "state" to "MT" for all records with port_code == "3315"
+results_df["port_code"] = results_df["port_code"].astype(str)
+results_df.loc[results_df["port_code"] == "3315", "state"] = "MT"
+
+
+# Data transformation
 results_df["date"] = pd.to_datetime(results_df["date"])
-results_df["month"] = results_df["date"].dt.month
+results_df["month"] = results_df["date"].dt.strftime('%b')
 results_df["year"] = results_df["date"].dt.year
 results_df["date"] = results_df["date"].dt.date
+
+results_df['value'] = results_df['value'].astype(int)
+sum_by_month = results_df.groupby(['year', 'month'])['value'].sum()
 print("info", results_df.info())
-nulls_df = results_df[results_df.isnull().any(axis=1)]
+
+
+# Dash app
 app = Dash()
 app.layout = [
     html.H1(children="m2m-capstone1-dash!"),
