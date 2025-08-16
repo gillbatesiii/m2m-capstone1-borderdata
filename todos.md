@@ -8,4 +8,7 @@
 
 
 - [ ] filter out non-passenger rows using `measure` field
-- [ ] 
+- [ ] line graph by year
+- [ ] multiple select dropdown menu for year
+- [ ] Jupyter notebook
+- [ ] Find alternative to render.com since the app is running out of memory
