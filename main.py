@@ -72,11 +72,8 @@ app.layout = [
     ),
 ]
 
-
-def main():
-    print("m2m-capstone1-dash is running")
-    app.run(debug=True, host="0.0.0.0", port=10000)
-
+server = app.server
 
 if __name__ == "__main__":
-    main()
+    print("m2m-capstone1-dash is running")
+    app.server.run(debug=True, host="0.0.0.0", port=10000)
