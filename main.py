@@ -3,12 +3,16 @@ import pandas as pd
 import os
 from dotenv import load_dotenv
 from sodapy import Socrata
+from typing import Final
 
 # get APP_TOKEN and initialize Socrata client
 
 load_dotenv()
 print("appname", os.getenv("app"))
-APP_TOKEN = os.getenv("SOCRATA_APP_TOKEN")
+# Constants
+APP_TOKEN: Final = os.getenv("SOCRATA_APP_TOKEN")
+WHERE_CLAUSE: Final = "border = 'US-Canada Border' AND date >= '2017-01-01'"
+DATASET_IDENTIFIER: Final = "keg4-3bc2"
 
 if APP_TOKEN:
     print("Successfully loaded app token.")
@@ -18,14 +22,13 @@ else:
 client = Socrata("data.bts.gov", APP_TOKEN)
 # First 2000 results, returned as JSON from API / converted to Python list of
 # dictionaries by sodapy.
-
 row_count = client.get(
-    "keg4-3bc2",
-    query=f"SELECT count(*) WHERE border = 'US-Canada Border' AND date >= '2017-01-01'",
+    DATASET_IDENTIFIER,
+    query=f"SELECT count(*) WHERE {WHERE_CLAUSE}",
 )[0]["count"]
 print("row_count", row_count)
 row_count = int(row_count)
-results = client.get("keg4-3bc2", limit=row_count, where="border = 'US-Canada Border' AND date >= '2017-01-01'")
+results = client.get(DATASET_IDENTIFIER, limit=row_count, where=WHERE_CLAUSE)
 client.close()
 print("length", len(results))
 # Convert to pandas DataFrame
