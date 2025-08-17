@@ -1,9 +1,11 @@
-from dash import Dash, html, dash_table
+from dash import Dash, html, dash_table, dcc
 import pandas as pd
 import os
 from dotenv import load_dotenv
 from sodapy import Socrata
 from typing import Final
+import plotly.express as px
+pd.options.mode.copy_on_write = "warn"
 
 # get APP_TOKEN and initialize Socrata client
 
@@ -76,12 +78,16 @@ app.layout = [
     html.Hr(),
     dash_table.DataTable(data=results_df.to_dict("records"), page_size=10),
     html.Hr(),
+    dash_table.DataTable(data=sum_by_month.to_dict("records"), page_size=10),
+    html.Hr(),
     dash_table.DataTable(
         data=results_df.to_dict("records"),
         columns=[{"name": i, "id": i} for i in results_df.columns],
     ),
+    dcc.Graph(figure=px.line(sum_by_month, x="month", y="value", color="year")),
 ]
 
+# gunicorn entry point
 server = app.server
 
 if __name__ == "__main__":
