@@ -14,10 +14,12 @@ APP_TOKEN: Final = os.getenv("SOCRATA_APP_TOKEN")
 WHERE_CLAUSE: Final = "border = 'US-Canada Border' AND date >= '2017-01-01'"
 DATASET_IDENTIFIER: Final = "keg4-3bc2"
 
+app_token_status = ""
 if APP_TOKEN:
-    print("Successfully loaded app token.")
+    app_token_status = "Successfully loaded app token."
 else:
-    print("Warning: APP_TOKEN not found. Make sure it's set in your .env file.")
+    app_token_status = "Warning: APP_TOKEN not found."
+print(app_token_status)
 
 client = Socrata("data.bts.gov", APP_TOKEN)
 # First 2000 results, returned as JSON from API / converted to Python list of
@@ -65,6 +67,7 @@ print("entry_categories", entry_categories)
 app = Dash()
 app.layout = [
     html.H1(children="m2m-capstone1-dash!"),
+    html.P(children=f"App token status: {app_token_status}"),
     html.Div(children="Null values: "),
     dash_table.DataTable(data=nulls_df.to_dict("records"), page_size=10),
     html.Hr(),
