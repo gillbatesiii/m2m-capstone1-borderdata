@@ -50,19 +50,22 @@ results_df.loc[results_df["port_code"] == "3315", "state"] = "MT"
 
 # Data transformation
 results_df["date"] = pd.to_datetime(results_df["date"])
-results_df["month"] = results_df["date"].dt.strftime('%b')
+# results_df["month"] = results_df["date"].dt.strftime('%b')
+results_df["month"] = results_df["date"].dt.month
 results_df["year"] = results_df["date"].dt.year
 results_df["date"] = results_df["date"].dt.date
 
 results_df['value'] = results_df['value'].astype(int)
-sum_by_month = results_df.groupby(['year', 'month'])['value'].sum()
-print("info", results_df.info())
 
 # Get different entry categories (measure)
 entry_categories = results_df['measure'].unique()
 print("entry_categories", entry_categories)
 
+# only get passenger and pedestrian entry categories
+results_df = results_df[results_df.measure.str.contains("passenger|pedestrian", na=False, case=False)]
 
+sum_by_month = results_df.groupby(['year', 'month'])['value'].sum().reset_index()
+print("info", results_df.info())
 # Dash app
 app = Dash()
 app.layout = [
