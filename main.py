@@ -56,6 +56,10 @@ results_df['value'] = results_df['value'].astype(int)
 sum_by_month = results_df.groupby(['year', 'month'])['value'].sum()
 print("info", results_df.info())
 
+# Get different entry categories (measure)
+entry_categories = results_df['measure'].unique()
+print("entry_categories", entry_categories)
+
 
 # Dash app
 app = Dash()
@@ -76,4 +80,4 @@ server = app.server
 
 if __name__ == "__main__":
     print("m2m-capstone1-dash is running")
-    app.server.run(debug=True, host="0.0.0.0", port=10000)
+    app.run(debug=True, host="0.0.0.0", port=10000)
