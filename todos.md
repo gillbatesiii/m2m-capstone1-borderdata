@@ -11,4 +11,4 @@
 - [ ] line graph by year
 - [ ] multiple select dropdown menu for year
 - [ ] Jupyter notebook
-- [ ] Find alternative to render.com since the app is running out of memory
+- [x] Find alternative to render.com since the app is running out of memory
