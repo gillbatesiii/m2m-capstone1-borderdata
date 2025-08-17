@@ -73,6 +73,7 @@ app = Dash()
 app.layout = [
     html.H1(children="m2m-capstone1-dash!"),
     html.P(children=f"App token status: {app_token_status}"),
+    dcc.Graph(figure=px.line(sum_by_month, x="month", y="value", color="year")),
     html.Div(children="Null values: "),
     dash_table.DataTable(data=nulls_df.to_dict("records"), page_size=10),
     html.Hr(),
@@ -84,7 +85,6 @@ app.layout = [
         data=results_df.to_dict("records"),
         columns=[{"name": i, "id": i} for i in results_df.columns],
     ),
-    dcc.Graph(figure=px.line(sum_by_month, x="month", y="value", color="year")),
 ]
 
 # gunicorn entry point
