@@ -24,8 +24,7 @@ else:
 print(app_token_status)
 
 client = Socrata("data.bts.gov", APP_TOKEN)
-# First 2000 results, returned as JSON from API / converted to Python list of
-# dictionaries by sodapy.
+# Fetch number of expected results for desired Sodapy query
 row_count = client.get(
     DATASET_IDENTIFIER,
     query=f"SELECT count(*) WHERE {WHERE_CLAUSE}",
