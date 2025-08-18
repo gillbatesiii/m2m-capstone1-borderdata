@@ -13,7 +13,7 @@ load_dotenv()
 print("appname", os.getenv("app"))
 # Constants
 APP_TOKEN: Final = os.getenv("SOCRATA_APP_TOKEN")
-WHERE_CLAUSE: Final = "border = 'US-Canada Border' AND date >= '2017-01-01'"
+WHERE_CLAUSE: Final = "border = 'US-Canada Border' AND date >= '2016-01-01'"
 DATASET_IDENTIFIER: Final = "keg4-3bc2"
 
 app_token_status = ""
@@ -72,7 +72,7 @@ app = Dash()
 app.layout = [
     html.H1(children="m2m-capstone1-dash!"),
     html.P(children=f"App token status: {app_token_status}"),
-    dcc.Graph(figure=px.line(sum_by_month, x="month", y="value", color="year")),
+    dcc.Graph(figure=px.line(sum_by_month, x="month", y="value", color="year", symbol="year")),
     html.Div(children="Null values: "),
     dash_table.DataTable(data=nulls_df.to_dict("records"), page_size=10),
     html.Hr(),
