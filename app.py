@@ -3,27 +3,35 @@ import pandas as pd
 import os
 from dotenv import load_dotenv
 from sodapy import Socrata
-from typing import Final
+from typing import Final, Tuple, Dict, Any
 import plotly.express as px
+
+# Configure pandas
 pd.options.mode.copy_on_write = "warn"
 
 # get APP_TOKEN and initialize Socrata client
 
-load_dotenv()
-print("appname", os.getenv("app"))
 # Constants
-APP_TOKEN: Final = os.getenv("SOCRATA_APP_TOKEN")
 WHERE_CLAUSE: Final = "border = 'US-Canada Border' AND date >= '2016-01-01'"
 DATASET_IDENTIFIER: Final = "keg4-3bc2"
 
-app_token_status = ""
-if APP_TOKEN:
-    app_token_status = "Successfully loaded app token."
-else:
-    app_token_status = "Warning: APP_TOKEN not found."
-print(app_token_status)
+def initialize_client() -> Tuple[Socrata, str]:
+    """Initialize and return Socrata client and app token status."""
+    load_dotenv()
+    app_token = os.getenv("SOCRATA_APP_TOKEN")
 
-client = Socrata("data.bts.gov", APP_TOKEN)
+    if app_token:
+        app_token_status = "Successfully loaded app token."
+    else:
+        app_token_status = "Warning: APP_TOKEN not found."
+
+    print(app_token_status)
+    client = Socrata("data.bts.gov", app_token)
+    return client, app_token_status
+
+# delete this later
+client, app_token_status = initialize_client()
+
 # Fetch number of expected results for desired Sodapy query
 row_count = client.get(
     DATASET_IDENTIFIER,
