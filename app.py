@@ -29,21 +29,23 @@ def initialize_client() -> Tuple[Socrata, str]:
     client = Socrata("data.bts.gov", app_token)
     return client, app_token_status
 
-# delete this later
+# refactor this into main later
 client, app_token_status = initialize_client()
 
-# Fetch number of expected results for desired Sodapy query
-row_count = client.get(
-    DATASET_IDENTIFIER,
-    query=f"SELECT count(*) WHERE {WHERE_CLAUSE}",
-)[0]["count"]
-print("row_count", row_count)
-row_count = int(row_count)
-results = client.get(DATASET_IDENTIFIER, limit=row_count, where=WHERE_CLAUSE)
-client.close()
-print("length", len(results))
+def fetch_border_data(client: Socrata) -> pd.DataFrame:
+    """Fetch border crossing data from Socrata API."""
+    # Get row count first
+    row_count = int(client.get(
+        DATASET_IDENTIFIER,
+        query=f"SELECT count(*) WHERE {WHERE_CLAUSE}",
+    )[0]["count"])
+    results = client.get(DATASET_IDENTIFIER, limit=row_count, where=WHERE_CLAUSE)
+    return pd.DataFrame.from_records(results)
+
+# refactor into main later
 # Convert to pandas DataFrame
-results_df = pd.DataFrame.from_records(results)
+results_df = fetch_border_data(client)
+client.close()
 
 # Data cleaning
 results_df.drop(columns=["point"], inplace=True)
