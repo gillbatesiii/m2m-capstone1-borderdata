@@ -47,19 +47,22 @@ def fetch_border_data(client: Socrata) -> pd.DataFrame:
 results_df = fetch_border_data(client)
 client.close()
 
-# Data cleaning
+def clean_data(df: pd.DataFrame) -> Tuple[pd.DataFrame, pd.DataFrame]:
+    """Clean the data."""
+    # Drop unnecessary columns
+    df = df.drop(columns=["point", "latitude", "longitude"], errors='ignore')
 
-results_df.drop(columns=["point"], inplace=True)
+    # Filter for null values
+    nulls_df = df[df.isnull().any(axis=1)]
 
-# Null values
-nulls_df = results_df[results_df.isnull().any(axis=1)]
+    # Fix missing state for port_code "3315"
+    df["port_code"] = df["port_code"].astype(str)
+    df.loc[df["port_code"] == "3315", "state"] = "MT"
 
-# "State" field of new port of entry "Chief Mountain Mt Poe" hasn't been populated yet.
-# Will set "state" to "MT" for all records with port_code == "3315"
-results_df["port_code"] = results_df["port_code"].astype(str)
-results_df.loc[results_df["port_code"] == "3315", "state"] = "MT"
+    return df, nulls_df
 
-
+# refactor into main later
+results_df, nulls_df = clean_data(results_df)
 # Data transformation
 results_df["date"] = pd.to_datetime(results_df["date"])
 # results_df["month"] = results_df["date"].dt.strftime('%b')
