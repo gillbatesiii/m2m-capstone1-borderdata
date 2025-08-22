@@ -6,6 +6,7 @@ readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
     "dash>=3.2.0",
+    "dash-mantine-components>=2.2.0",
     "gunicorn>=23.0.0",
     "pandas>=2.3.1",
     "plotly[express]>=6.2.0",
