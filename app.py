@@ -48,6 +48,7 @@ results_df = fetch_border_data(client)
 client.close()
 
 # Data cleaning
+
 results_df.drop(columns=["point"], inplace=True)
 
 # Null values
