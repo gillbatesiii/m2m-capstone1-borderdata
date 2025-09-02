@@ -63,24 +63,31 @@ def clean_data(df: pd.DataFrame) -> Tuple[pd.DataFrame, pd.DataFrame]:
 
 # refactor into main later
 results_df, nulls_df = clean_data(results_df)
+
 # Data transformation
-results_df["date"] = pd.to_datetime(results_df["date"])
-# results_df["month"] = results_df["date"].dt.strftime('%b')
-results_df["month"] = results_df["date"].dt.month
-results_df["year"] = results_df["date"].dt.year
-results_df["date"] = results_df["date"].dt.date
+def transform_data(df: pd.DataFrame) -> Tuple[pd.DataFrame, pd.DataFrame]:
+    """Transform the data for analysis and visualization."""
+    # Convert date and extract components
+    df["date"] = pd.to_datetime(df["date"])
+    # results_df["month"] = results_df["date"].dt.strftime('%b')
+    df["month"] = df["date"].dt.month
+    df["year"] = df["date"].dt.year
+    df["date"] = df["date"].dt.date
 
-results_df['value'] = results_df['value'].astype(int)
+    # Ensure value is integer
+    df['value'] = df['value'].astype(int)
 
-# Get different entry categories (measure)
-entry_categories = results_df['measure'].unique()
-print("entry_categories", entry_categories)
+    # Filter for passenger and pedestrian data only
+    filtered_df = df[df.measure.str.contains("passenger|pedestrian", na=False, case=False)]
 
-# only get passenger and pedestrian entry categories
-results_df = results_df[results_df.measure.str.contains("passenger|pedestrian", na=False, case=False)]
+    # Calculate monthly sums
+    sum_by_month = filtered_df.groupby(['year', 'month'])['value'].sum().reset_index()
 
-sum_by_month = results_df.groupby(['year', 'month'])['value'].sum().reset_index()
-print("info", results_df.info())
+    return filtered_df, sum_by_month
+
+# refactor into main later
+results_df, sum_by_month = transform_data(results_df)
+
 # Dash app
 app = Dash()
 app.layout = [
@@ -92,7 +99,7 @@ app.layout = [
     html.Hr(),
     dash_table.DataTable(data=results_df.to_dict("records"), page_size=10),
     html.Hr(),
-    dash_table.DataTable(data=sum_by_month.to_dict("records"), page_size=10),
+    dash_table.DataTable(data=sum_by_month.to_dict("records"), page_size=12),
     html.Hr(),
     dash_table.DataTable(
         data=results_df.to_dict("records"),
