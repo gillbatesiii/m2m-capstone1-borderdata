@@ -57,7 +57,7 @@ def clean_data(df: pd.DataFrame) -> Tuple[pd.DataFrame, pd.DataFrame]:
 
     # Fix missing state for port_code "3315"
     df["port_code"] = df["port_code"].astype(str)
-    df.loc[df["port_code"] == "3315", "state"] = "MT"
+    df.loc[df["port_code"] == "3315", "state"] = "Montana"
 
     return df, nulls_df
 
