@@ -138,11 +138,11 @@ def main():
     # Create and run app
     app = create_dash_app(processed_df, monthly_summary, nulls_df, token_status)
 
-    # gunicorn entry point
-    server = app.server
-
     if __name__ == "__main__":
         print("m2m-capstone1-dash is running")
         app.run(debug=True, host="0.0.0.0", port=10000)
 
+    return app
 
+# gunicorn entry point
+server = main().server
