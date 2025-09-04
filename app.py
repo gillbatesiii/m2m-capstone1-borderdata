@@ -9,14 +9,15 @@ import plotly.express as px
 # Configure pandas
 pd.options.mode.copy_on_write = "warn"
 
-# get APP_TOKEN and initialize Socrata client
-
 # Constants
 WHERE_CLAUSE: Final = "border = 'US-Canada Border' AND date >= '2016-01-01'"
 DATASET_IDENTIFIER: Final = "keg4-3bc2"
 
+
 def initialize_client() -> Tuple[Socrata, str]:
-    """Initialize and return Socrata client and app token status."""
+    """Initialize and return Socrata client and app token status.
+        returns client, app_token_status
+    """
     load_dotenv()
     app_token = os.getenv("SOCRATA_APP_TOKEN")
 
@@ -29,9 +30,6 @@ def initialize_client() -> Tuple[Socrata, str]:
     client = Socrata("data.bts.gov", app_token)
     return client, app_token_status
 
-# refactor this into main later
-client, app_token_status = initialize_client()
-
 def fetch_border_data(client: Socrata) -> pd.DataFrame:
     """Fetch border crossing data from Socrata API."""
     # Get row count first
@@ -42,13 +40,11 @@ def fetch_border_data(client: Socrata) -> pd.DataFrame:
     results = client.get(DATASET_IDENTIFIER, limit=row_count, where=WHERE_CLAUSE)
     return pd.DataFrame.from_records(results)
 
-# refactor into main later
-# Convert to pandas DataFrame
-results_df = fetch_border_data(client)
-client.close()
 
 def clean_data(df: pd.DataFrame) -> Tuple[pd.DataFrame, pd.DataFrame]:
-    """Clean the data."""
+    """Clean and preprocess the data.
+    Returns df, nulls_df
+    """
     # Drop unnecessary columns
     df = df.drop(columns=["point", "latitude", "longitude"], errors='ignore')
 
@@ -61,10 +57,7 @@ def clean_data(df: pd.DataFrame) -> Tuple[pd.DataFrame, pd.DataFrame]:
 
     return df, nulls_df
 
-# refactor into main later
-results_df, nulls_df = clean_data(results_df)
 
-# Data transformation
 def transform_data(df: pd.DataFrame) -> Tuple[pd.DataFrame, pd.DataFrame]:
     """Transform the data for analysis and visualization."""
     # Convert date and extract components
@@ -85,31 +78,71 @@ def transform_data(df: pd.DataFrame) -> Tuple[pd.DataFrame, pd.DataFrame]:
 
     return filtered_df, sum_by_month
 
-# refactor into main later
-results_df, sum_by_month = transform_data(results_df)
 
-# Dash app
-app = Dash()
-app.layout = [
-    html.H1(children="m2m-capstone1-dash!"),
-    html.P(children=f"App token status: {app_token_status}"),
-    dcc.Graph(figure=px.line(sum_by_month, x="month", y="value", color="year", symbol="year")),
-    html.Div(children="Null values: "),
-    dash_table.DataTable(data=nulls_df.to_dict("records"), page_size=10),
-    html.Hr(),
-    dash_table.DataTable(data=results_df.to_dict("records"), page_size=10),
-    html.Hr(),
-    dash_table.DataTable(data=sum_by_month.to_dict("records"), page_size=12),
-    html.Hr(),
-    dash_table.DataTable(
-        data=results_df.to_dict("records"),
-        columns=[{"name": i, "id": i} for i in results_df.columns],
-    ),
-]
+def create_dash_app(df: pd.DataFrame, sum_df: pd.DataFrame, nulls_df: pd.DataFrame, token_status: str) -> Dash:
+    """Create and configure the Dash application."""
 
-# gunicorn entry point
-server = app.server
+    app = Dash(__name__)
 
-if __name__ == "__main__":
-    print("m2m-capstone1-dash is running")
-    app.run(debug=True, host="0.0.0.0", port=10000)
+    # Create the line figure
+    fig = px.line(sum_df, x="month", y="value", color="year", symbol="year",
+                 title="Monthly Border Crossings by Year")
+
+    app.layout = html.Div([
+        html.H1(children="US-Canada Border Crossings Dashboard"),
+        html.P(children=f"App token status: {token_status}"),
+
+        # Main visualization
+        dcc.Graph(figure=fig),
+
+        # Data tables section
+        html.H2("Data Tables"),
+        html.H3("Null Values in Data"),
+        dash_table.DataTable(
+            data=nulls_df.to_dict("records"),
+            page_size=10,
+            style_table={'overflowX': 'auto'}
+        ),
+
+        html.H3("Monthly Summary"),
+        dash_table.DataTable(
+            data=sum_df.to_dict("records"),
+            page_size=12,
+            style_table={'overflowX': 'auto'}
+        ),
+
+        html.H3("Raw Data"),
+        dash_table.DataTable(
+            data=df.to_dict("records"),
+            page_size=100,
+            style_table={'overflowX': 'auto'}
+        ),
+    ])
+
+    return app
+
+
+def main():
+    """Main function to run the application."""
+    # Initialize client and fetch data
+    client, token_status = initialize_client()
+    try:
+        df = fetch_border_data(client)
+    finally:
+        client.close()
+
+    # Process data
+    cleaned_df, nulls_df = clean_data(df)
+    processed_df, monthly_summary = transform_data(cleaned_df)
+
+    # Create and run app
+    app = create_dash_app(processed_df, monthly_summary, nulls_df, token_status)
+
+    # gunicorn entry point
+    server = app.server
+
+    if __name__ == "__main__":
+        print("m2m-capstone1-dash is running")
+        app.run(debug=True, host="0.0.0.0", port=10000)
+
+
