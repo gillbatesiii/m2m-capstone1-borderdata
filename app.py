@@ -5,6 +5,7 @@ from dotenv import load_dotenv
 from sodapy import Socrata
 from typing import Final, Tuple, Dict, Any
 import plotly.express as px
+import dash_mantine_components as dmc
 
 # Configure pandas
 pd.options.mode.copy_on_write = "warn"
@@ -27,12 +28,12 @@ def initialize_client() -> Tuple[Socrata, str]:
         app_token_status = "Warning: APP_TOKEN not found."
 
     print(app_token_status)
-    client = Socrata("data.bts.gov", app_token)
+    client = Socrata("data.bts.gov", app_token, timeout=90)
     return client, app_token_status
 
 def fetch_border_data(client: Socrata) -> pd.DataFrame:
     """Fetch border crossing data from Socrata API."""
-    # Get row count first
+    # Get the row count first
     row_count = int(client.get(
         DATASET_IDENTIFIER,
         query=f"SELECT count(*) WHERE {WHERE_CLAUSE}",
@@ -62,7 +63,7 @@ def transform_data(df: pd.DataFrame) -> Tuple[pd.DataFrame, pd.DataFrame]:
     """Transform the data for analysis and visualization."""
     # Convert date and extract components
     df["date"] = pd.to_datetime(df["date"])
-    # results_df["month"] = results_df["date"].dt.strftime('%b')
+    df["month_name"] = df["date"].dt.strftime('%b')
     df["month"] = df["date"].dt.month
     df["year"] = df["date"].dt.year
     df["date"] = df["date"].dt.date
@@ -74,8 +75,8 @@ def transform_data(df: pd.DataFrame) -> Tuple[pd.DataFrame, pd.DataFrame]:
     filtered_df = df[df.measure.str.contains("passenger|pedestrian", na=False, case=False)]
 
     # Calculate monthly sums
-    sum_by_month = filtered_df.groupby(['year', 'month'])['value'].sum().reset_index()
-
+    sum_by_month = filtered_df.groupby(['year', 'month', 'month_name'])['value'].sum().reset_index()
+    sum_by_month = sum_by_month.sort_values(by=['year', 'month'])
     return filtered_df, sum_by_month
 
 
@@ -84,11 +85,52 @@ def create_dash_app(df: pd.DataFrame, sum_df: pd.DataFrame, nulls_df: pd.DataFra
 
     app = Dash(__name__)
 
+    max_value = sum_df['value'].max()
     # Create the line figure
-    fig = px.line(sum_df, x="month", y="value", color="year", symbol="year",
-                 title="Monthly Border Crossings by Year")
+    fig = px.line(sum_df,
+                  x="month_name",
+                  y="value",
+                  color="year",
+                  symbol="year",
+                  height=800,
+                  range_y=[0 , max_value * 1.1],
+                  title="Passenger and Pedestrian Canada-USA Land Border Crossings by Year")
 
-    app.layout = html.Div([
+
+    accordion_items = [
+        dmc.AccordionItem([
+                dmc.AccordionControl("Monthly Summary"),
+                dmc.AccordionPanel(
+                    dash_table.DataTable(
+                      data=sum_df.to_dict("records"),
+                      page_size=12,
+                      style_table={'overflowX': 'auto'}
+                    )
+                ),
+        ],
+        value="monthly_summary"),
+
+        dmc.AccordionItem([
+            dmc.AccordionControl("Raw Data"),
+            dmc.AccordionPanel(
+                dash_table.DataTable(
+                    data=df.to_dict("records"),
+                    page_size=100,
+                    style_table={'overflowX': 'auto'}
+                )
+            ),
+        ],
+        value="raw_data"),
+                  #
+                  # html.H3("Null Values in Data"),
+                  # dash_table.DataTable(
+                  #     data=nulls_df.to_dict("records"),
+                  #     page_size=10,
+                  #     style_table={'overflowX': 'auto'}
+                  # ),
+    ]
+
+    app.layout = dmc.MantineProvider([
         html.H1(children="US-Canada Border Crossings Dashboard"),
         html.P(children=f"App token status: {token_status}"),
 
@@ -97,26 +139,16 @@ def create_dash_app(df: pd.DataFrame, sum_df: pd.DataFrame, nulls_df: pd.DataFra
 
         # Data tables section
         html.H2("Data Tables"),
-        html.H3("Null Values in Data"),
-        dash_table.DataTable(
-            data=nulls_df.to_dict("records"),
-            page_size=10,
-            style_table={'overflowX': 'auto'}
-        ),
 
-        html.H3("Monthly Summary"),
-        dash_table.DataTable(
-            data=sum_df.to_dict("records"),
-            page_size=12,
-            style_table={'overflowX': 'auto'}
-        ),
-
-        html.H3("Raw Data"),
-        dash_table.DataTable(
-            data=df.to_dict("records"),
-            page_size=100,
-            style_table={'overflowX': 'auto'}
-        ),
+        dmc.Accordion(
+            chevronPosition="left",
+            variant="separated",
+            disableChevronRotation=False,
+            radius="sm",
+            chevronIconSize=16,
+            children=accordion_items,
+            multiple=True,
+        )
     ])
 
     return app
